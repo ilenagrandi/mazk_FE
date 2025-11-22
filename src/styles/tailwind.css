@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors - Cyan accent for mazk brand (used VERY sparingly) */
+    --color-primary: #22d3ee; /* cyan-400 - primary accent */
+    --color-primary-foreground: #000000; /* black */
+    
+    /* Secondary Colors */
+    --color-secondary: #38bdf8; /* sky-400 - lighter cyan */
+    --color-secondary-foreground: #000000; /* black */
+    
+    /* Accent Colors - Minimal cyan for highlights */
+    --color-accent: #22d3ee; /* cyan-400 */
+    --color-accent-foreground: #000000; /* black */
+    
+    /* Background Colors - Full dark mode */
+    --color-background: #000000; /* pure black */
+    --color-foreground: #FFFFFF; /* pure white */
+    
+    /* Surface Colors - Dark surfaces */
+    --color-card: #030712; /* gray-950 - dark card surface */
+    --color-card-foreground: #FFFFFF; /* white */
+    
+    --color-popover: #09090b; /* zinc-950 */
+    --color-popover-foreground: #FFFFFF; /* white */
+    
+    /* Muted Colors - Gray tones */
+    --color-muted: #18181b; /* zinc-900 */
+    --color-muted-foreground: #a1a1aa; /* zinc-400 */
+    
+    /* Border & Input - Subtle zinc/neutral borders */
+    --color-border: #27272a; /* zinc-800 */
+    --color-input: #27272a; /* zinc-800 */
+    --color-ring: #22d3ee; /* cyan-400 */
+    
+    /* Status Colors */
+    --color-success: #10B981; /* emerald-500 */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    --color-warning: #F59E0B; /* amber-500 */
+    --color-warning-foreground: #000000; /* black */
+    
+    --color-error: #EF4444; /* red-500 */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    --color-destructive: #EF4444; /* red-500 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Radius - Minimal, clean corners */
+    --radius: 0.5rem;
+  }
+  
+  .light {
+    /* Primary Colors - Cyan accent remains for brand consistency */
+    --color-primary: #0891b2; /* cyan-600 - deeper for light mode */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    /* Secondary Colors */
+    --color-secondary: #0284c7; /* sky-600 - deeper cyan */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    
+    /* Accent Colors - Deeper cyan for light mode */
+    --color-accent: #0891b2; /* cyan-600 */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Background Colors - Clean light mode */
+    --color-background: #FFFFFF; /* pure white */
+    --color-foreground: #09090b; /* zinc-950 - almost black */
+    
+    /* Surface Colors - Light surfaces */
+    --color-card: #f8fafc; /* slate-50 - very light gray */
+    --color-card-foreground: #09090b; /* zinc-950 */
+    
+    --color-popover: #FFFFFF; /* pure white */
+    --color-popover-foreground: #09090b; /* zinc-950 */
+    
+    /* Muted Colors - Light gray tones */
+    --color-muted: #f1f5f9; /* slate-100 */
+    --color-muted-foreground: #64748b; /* slate-500 */
+    
+    /* Border & Input - Subtle light borders */
+    --color-border: #e2e8f0; /* slate-200 */
+    --color-input: #e2e8f0; /* slate-200 */
+    --color-ring: #0891b2; /* cyan-600 */
+    
+    /* Status Colors - Adjusted for light mode */
+    --color-success: #059669; /* emerald-600 */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    --color-warning: #D97706; /* amber-600 */
+    --color-warning-foreground: #FFFFFF; /* white */
+    
+    --color-error: #DC2626; /* red-600 */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    --color-destructive: #DC2626; /* red-600 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-weight: 300;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+  }
+  
+  h1 {
+    @apply text-5xl md:text-6xl lg:text-7xl xl:text-8xl;
+  }
+  
+  h2 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+  
+  h3 {
+    @apply text-3xl md:text-4xl;
+  }
+  
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+  
+  /* Small labels - adjusted for theme */
+  .label-text {
+    @apply text-xs uppercase tracking-widest font-medium;
+  }
+  
+  :root .label-text {
+    @apply text-zinc-500;
+  }
+  
+  .light .label-text {
+    @apply text-slate-500;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom gradient for mazk brand - works in both themes */
+  .gradient-mazk {
+    background: linear-gradient(135deg, #22d3ee 0%, #38bdf8 100%);
+  }
+  
+  .light .gradient-mazk {
+    background: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
+  }
+  
+  /* Minimal shadow for dark theme */
+  .shadow-soft {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+  }
+  
+  .light .shadow-soft {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Elevated shadow for cards */
+  .shadow-elevated {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.4), 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .light .shadow-elevated {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.08), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  /* Border accent - left border for steps/sections */
+  .border-accent-left {
+    @apply border-l-2 border-cyan-400;
+  }
+  
+  .light .border-accent-left {
+    @apply border-l-2 border-cyan-600;
+  }
+  
+  /* Hover states for cards - theme-aware */
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+  
+  :root .card-hover {
+    @apply hover:border-zinc-700 hover:bg-zinc-900/50;
+  }
+  
+  .light .card-hover {
+    @apply hover:border-slate-300 hover:bg-slate-50;
+  }
+}
+
