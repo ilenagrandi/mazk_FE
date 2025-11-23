@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { ArrowLeft, Play, Pause, Phone, PhoneOff, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
-import { initiateOutboundCall, formatPhoneNumber } from '../../services/metatron';
+import { initiateOutboundCall, formatPhoneNumber, getCallStatus, TranscriptEntry as MetatronTranscriptEntry } from '../../services/metatron';
+import TranscriptFloatingPanel from '../call-interface/components/TranscriptFloatingPanel';
 
 interface Lead {
   id: string;
@@ -27,6 +28,11 @@ const LeadsManagement = () => {
   );
   const [isCalling, setIsCalling] = useState(false);
   const [currentCallIndex, setCurrentCallIndex] = useState<number | null>(null);
+  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
+  const [currentCallLeadId, setCurrentCallLeadId] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<MetatronTranscriptEntry[]>([]);
+  const [showTranscriptPanel, setShowTranscriptPanel] = useState(false);
+  const transcriptPollingRef = useRef<number | null>(null);
 
   const handleStartCalls = async () => {
     if (leads.length === 0) return;
@@ -66,16 +72,14 @@ const LeadsManagement = () => {
       
       console.log('Call initiated:', callResponse);
       
-      // Navigate to call interface with call information
-      navigate('/call-interface', {
-        state: {
-          cloneData,
-          lead: firstPendingLead,
-          allLeads: leads,
-          callId: callResponse.call_id,
-          roomName: callResponse.room_name,
-        }
-      });
+      // Store call information and stay on this page
+      setCurrentCallId(callResponse.call_id);
+      setCurrentCallLeadId(firstPendingLead.id);
+      setIsCalling(true);
+      setShowTranscriptPanel(true);
+      
+      // Start polling for transcript
+      startTranscriptPolling(callResponse.call_id);
     } catch (error) {
       console.error('Error initiating call:', error);
       let errorMessage = error instanceof Error ? error.message : 'Error desconocido al iniciar la llamada';
@@ -100,6 +104,63 @@ const LeadsManagement = () => {
       ));
     }
   };
+
+  const startTranscriptPolling = (callId: string) => {
+    // Stop any existing polling
+    if (transcriptPollingRef.current) {
+      clearInterval(transcriptPollingRef.current);
+    }
+
+    const pollTranscript = async () => {
+      try {
+        const status = await getCallStatus(callId);
+        if (status.transcript && status.transcript.length > 0) {
+          setTranscript(status.transcript);
+        }
+        
+        // Update call status
+        if (status.status === 'completed' || status.status === 'failed') {
+          // Call ended, update lead status
+          setLeads(prev => prev.map(lead => 
+            lead.id === currentCallLeadId 
+              ? { 
+                  ...lead, 
+                  status: status.status === 'completed' ? 'completed' as const : 'failed' as const,
+                  callResult: status.status === 'completed' ? 'Llamada completada exitosamente' : 'Llamada fallida'
+                }
+              : lead
+          ));
+          
+          // Stop polling
+          if (transcriptPollingRef.current) {
+            clearInterval(transcriptPollingRef.current);
+            transcriptPollingRef.current = null;
+          }
+          
+          setIsCalling(false);
+          setCurrentCallId(null);
+          setCurrentCallLeadId(null);
+        }
+      } catch (error) {
+        console.error('Error fetching transcript:', error);
+      }
+    };
+
+    // Poll every 2 seconds
+    transcriptPollingRef.current = window.setInterval(pollTranscript, 2000);
+    
+    // Initial poll
+    pollTranscript();
+  };
+
+  useEffect(() => {
+    // Cleanup polling on unmount
+    return () => {
+      if (transcriptPollingRef.current) {
+        clearInterval(transcriptPollingRef.current);
+      }
+    };
+  }, []);
 
   const simulateCall = (index: number) => {
     if (index >= leads.length) {
@@ -139,8 +200,19 @@ const LeadsManagement = () => {
   };
 
   const handleStopCalls = () => {
+    // Stop polling
+    if (transcriptPollingRef.current) {
+      clearInterval(transcriptPollingRef.current);
+      transcriptPollingRef.current = null;
+    }
+    
     setIsCalling(false);
     setCurrentCallIndex(null);
+    setCurrentCallId(null);
+    setCurrentCallLeadId(null);
+    setShowTranscriptPanel(false);
+    setTranscript([]);
+    
     setLeads(prev => prev.map(lead => 
       lead.status === 'calling' ? { ...lead, status: 'pending' as const } : lead
     ));
@@ -285,7 +357,7 @@ const LeadsManagement = () => {
                     <tr 
                       key={lead.id} 
                       className={`hover:bg-zinc-900/50 transition-colors ${
-                        currentCallIndex === index ? 'bg-cyan-400/10 border-l-2 border-cyan-400' : ''
+                        (currentCallIndex === index || lead.id === currentCallLeadId) ? 'bg-cyan-400/10 border-l-2 border-cyan-400' : ''
                       }`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -343,6 +415,15 @@ const LeadsManagement = () => {
             </div>
           )}
         </div>
+
+        {/* Transcript Floating Panel */}
+        {currentCallId && (
+          <TranscriptFloatingPanel
+            entries={transcript}
+            isVisible={showTranscriptPanel}
+            onClose={() => setShowTranscriptPanel(false)}
+          />
+        )}
       </div>
     </>
   );
