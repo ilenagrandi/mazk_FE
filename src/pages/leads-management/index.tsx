@@ -4,8 +4,7 @@ import { Helmet } from 'react-helmet';
 import { ArrowLeft, Play, Pause, Phone, PhoneOff, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
-import { initiateOutboundCall, formatPhoneNumber, getCallStatus, TranscriptEntry as MetatronTranscriptEntry } from '../../services/metatron';
-import TranscriptFloatingPanel from '../call-interface/components/TranscriptFloatingPanel';
+import { initiateOutboundCall, formatPhoneNumber, getCallStatus } from '../../services/metatron';
 
 interface Lead {
   id: string;
@@ -30,8 +29,6 @@ const LeadsManagement = () => {
   const [currentCallIndex, setCurrentCallIndex] = useState<number | null>(null);
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [currentCallLeadId, setCurrentCallLeadId] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<MetatronTranscriptEntry[]>([]);
-  const [showTranscriptPanel, setShowTranscriptPanel] = useState(false);
   const transcriptPollingRef = useRef<number | null>(null);
 
   const handleStartCalls = async () => {
@@ -76,10 +73,9 @@ const LeadsManagement = () => {
       setCurrentCallId(callResponse.call_id);
       setCurrentCallLeadId(firstPendingLead.id);
       setIsCalling(true);
-      setShowTranscriptPanel(true);
       
-      // Start polling for transcript
-      startTranscriptPolling(callResponse.call_id);
+      // Start polling for call status
+      startCallStatusPolling(callResponse.call_id);
     } catch (error) {
       console.error('Error initiating call:', error);
       let errorMessage = error instanceof Error ? error.message : 'Error desconocido al iniciar la llamada';
@@ -105,18 +101,15 @@ const LeadsManagement = () => {
     }
   };
 
-  const startTranscriptPolling = (callId: string) => {
+  const startCallStatusPolling = (callId: string) => {
     // Stop any existing polling
     if (transcriptPollingRef.current) {
       clearInterval(transcriptPollingRef.current);
     }
 
-    const pollTranscript = async () => {
+    const pollCallStatus = async () => {
       try {
         const status = await getCallStatus(callId);
-        if (status.transcript && status.transcript.length > 0) {
-          setTranscript(status.transcript);
-        }
         
         // Update call status
         if (status.status === 'completed' || status.status === 'failed') {
@@ -142,15 +135,15 @@ const LeadsManagement = () => {
           setCurrentCallLeadId(null);
         }
       } catch (error) {
-        console.error('Error fetching transcript:', error);
+        console.error('Error fetching call status:', error);
       }
     };
 
     // Poll every 2 seconds
-    transcriptPollingRef.current = window.setInterval(pollTranscript, 2000);
+    transcriptPollingRef.current = window.setInterval(pollCallStatus, 2000);
     
     // Initial poll
-    pollTranscript();
+    pollCallStatus();
   };
 
   useEffect(() => {
@@ -210,11 +203,9 @@ const LeadsManagement = () => {
     setCurrentCallIndex(null);
     setCurrentCallId(null);
     setCurrentCallLeadId(null);
-    setShowTranscriptPanel(false);
-    setTranscript([]);
     
     setLeads(prev => prev.map(lead => 
-      lead.status === 'calling' ? { ...lead, status: 'pending' as const } : lead
+      lead.status === 'calling' ? { ...lead, status: 'pending' as const, callResult: undefined } : lead
     ));
   };
 
@@ -390,9 +381,16 @@ const LeadsManagement = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-400">
-                          {lead.callResult || '-'}
-                        </div>
+                        {lead.id === currentCallLeadId && lead.status === 'calling' ? (
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/20 border border-cyan-400/50">
+                            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                            <span className="text-xs font-medium text-cyan-400">Llamada en curso</span>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-400">
+                            {lead.callResult || '-'}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -415,15 +413,6 @@ const LeadsManagement = () => {
             </div>
           )}
         </div>
-
-        {/* Transcript Floating Panel */}
-        {currentCallId && (
-          <TranscriptFloatingPanel
-            entries={transcript}
-            isVisible={showTranscriptPanel}
-            onClose={() => setShowTranscriptPanel(false)}
-          />
-        )}
       </div>
     </>
   );
